@@ -1,3 +1,8 @@
+## 0.1.1
+
+- Remove inline comments
+- Fix device detection to prefer iOS simulator over Android
+
 ## 0.1.0
 
 - Initial release
