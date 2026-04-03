@@ -117,17 +117,12 @@ class _SkeletonState extends State<Skeleton>
         height: box.size.height,
         bones: bones,
       );
-      // Structured output parsed by the CLI.
-      // Format: HOLLOW_JSON:<name>:<json>
       debugPrint('HOLLOW_JSON:${widget.name}:${jsonEncode(result.toJson())}');
-    } catch (_) {
-      // Never crash the app during capture
-    }
+    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
-    // Build mode: render fixture/child so the CLI can snapshot positions.
     if (_kBuildMode) {
       return widget.fixture ?? widget.child;
     }

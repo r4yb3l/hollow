@@ -24,9 +24,6 @@ class BonePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (bones.isEmpty) return;
 
-    // Shift the gradient horizontally based on animation progress.
-    // Multiplying by 3 and offsetting by -width makes the highlight
-    // travel fully left-to-right across the entire container.
     final shimmerX = shimmerAnimation.value * size.width * 3 - size.width;
 
     final shader = LinearGradient(
