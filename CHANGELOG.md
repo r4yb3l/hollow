@@ -1,3 +1,20 @@
+## 0.1.4
+
+- Add `topics` to pubspec for pub.dev discoverability (skeleton, shimmer, loading, placeholder, ui)
+- Improve package description for better search indexing
+
+## 0.1.3
+
+- Add screenshots section to pubspec for pub.dev gallery
+- Add demo GIF to README with centered layout
+- Add features section to README
+- Improve example app with rich demo widgets (photo card, profile card with ExpansionTile, stat card, message tiles)
+- Add avatar images to example cards
+
+## 0.1.2
+
+- Add example skeleton assets and screenshots
+
 ## 0.1.1
 
 - Remove inline comments
