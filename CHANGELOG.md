@@ -1,3 +1,7 @@
+## 0.2.1
+
+- Simplify example app to a single self-contained file for pub.dev
+
 ## 0.2.0
 
 - Add `HollowRunner.run()` — replaces the `registerAllBones()` + `runApp()` pattern with a single entry point

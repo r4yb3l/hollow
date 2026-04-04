@@ -2,13 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hollow/hollow.dart';
 
 import 'bones/bones_registry.dart';
-import 'screens/dashboard_screen.dart';
-import 'screens/feed_screen.dart';
-import 'screens/messages_screen.dart';
-import 'widgets/message_tile.dart';
-import 'widgets/photo_card.dart';
-import 'widgets/profile_card.dart';
-import 'widgets/stat_card.dart';
 
 void main() {
   HollowRunner.run(
@@ -16,52 +9,9 @@ void main() {
     setup: registerAllBones,
     fixtures: () => [
       Skeleton(
-        name: 'photo-card',
+        name: 'article-card',
         loading: false,
-        fixture: const PhotoCard(
-          imageUrl:
-              'https://images.unsplash.com/photo-1706195782033-6a351ce67878?fm=jpg&q=60&w=3000&auto=format&fit=crop',
-          title: 'Pixel-perfect skeletons in Flutter',
-          subtitle: 'A deep dive into the RenderObject tree',
-          author: 'r4yb3l',
-          readTime: '4 min read',
-          likes: 128,
-        ),
-        child: const SizedBox.shrink(),
-      ),
-      Skeleton(
-        name: 'list-tile',
-        loading: false,
-        fixture: const MessageTile(
-          name: 'Laura Mendez',
-          message: 'Hey! Check out the new skeleton package',
-          time: '2m ago',
-          avatarUrl:
-              'https://img.freepik.com/free-photo/young-beautiful-woman-pink-warm-sweater-natural-look-smiling-portrait-isolated-long-hair_285396-896.jpg',
-        ),
-        child: const SizedBox.shrink(),
-      ),
-      Skeleton(
-        name: 'stat-card',
-        loading: false,
-        fixture: const StatCard(
-          title: 'Monthly Revenue',
-          value: '\$12,847',
-          change: '+12.5%',
-          icon: Icons.trending_up,
-        ),
-        child: const SizedBox.shrink(),
-      ),
-      Skeleton(
-        name: 'profile-card',
-        loading: false,
-        fixture: const ProfileCard(
-          name: 'Gabriel Torres',
-          handle: '@gabtorres',
-          bio: 'Flutter developer & open source contributor',
-          followers: '2.4k',
-          following: '312',
-        ),
+        fixture: ArticleCard(data: ArticleCard.mock),
         child: const SizedBox.shrink(),
       ),
     ],
@@ -75,43 +25,108 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorSchemeSeed: Colors.indigo,
-        useMaterial3: true,
-      ),
-      home: const _Shell(),
+      theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
+      home: const FeedScreen(),
     );
   }
 }
 
-class _Shell extends StatefulWidget {
-  const _Shell();
+class FeedScreen extends StatefulWidget {
+  const FeedScreen({super.key});
 
   @override
-  State<_Shell> createState() => _ShellState();
+  State<FeedScreen> createState() => _FeedScreenState();
 }
 
-class _ShellState extends State<_Shell> {
-  int _index = 0;
+class _FeedScreenState extends State<FeedScreen> {
+  bool _loading = true;
 
-  static const _screens = [
-    FeedScreen(),
-    MessagesScreen(),
-    DashboardScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _loading = false);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_index],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.article_outlined), label: 'Feed'),
-          NavigationDestination(icon: Icon(Icons.chat_bubble_outline), label: 'Messages'),
-          NavigationDestination(icon: Icon(Icons.bar_chart_outlined), label: 'Dashboard'),
-        ],
+      appBar: AppBar(title: const Text('hollow')),
+      body: ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: ArticleCard.feed.length,
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
+        itemBuilder: (context, index) => Skeleton(
+          name: 'article-card',
+          loading: _loading,
+          child: ArticleCard(data: ArticleCard.feed[index]),
+        ),
+      ),
+    );
+  }
+}
+
+typedef Article = ({String title, String author, String readTime, int likes});
+
+class ArticleCard extends StatelessWidget {
+  const ArticleCard({super.key, required this.data});
+
+  final Article data;
+
+  static const mock = (
+    title: 'Pixel-perfect skeletons in Flutter',
+    author: 'r4yb3l',
+    readTime: '4 min read',
+    likes: 128,
+  );
+
+  static const feed = <Article>[
+    mock,
+    (title: 'Building reactive UIs with BLoC', author: 'r4yb3l', readTime: '6 min read', likes: 94),
+    (title: 'Flutter performance tips', author: 'r4yb3l', readTime: '5 min read', likes: 211),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: colors.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              data.title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const CircleAvatar(
+                  radius: 14,
+                  backgroundImage: NetworkImage('https://avatars.githubusercontent.com/u/108087778?v=4'),
+                ),
+                const SizedBox(width: 8),
+                Text(data.author, style: Theme.of(context).textTheme.labelMedium),
+                const Spacer(),
+                Icon(Icons.schedule, size: 14, color: colors.outline),
+                const SizedBox(width: 4),
+                Text(data.readTime, style: Theme.of(context).textTheme.labelSmall),
+                const SizedBox(width: 12),
+                Icon(Icons.favorite_border, size: 14, color: colors.outline),
+                const SizedBox(width: 4),
+                Text('${data.likes}', style: Theme.of(context).textTheme.labelSmall),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
