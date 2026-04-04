@@ -2,6 +2,16 @@
 
 Pixel-perfect skeleton loading screens for Flutter — extracted from your real widget tree, no manual measurement required.
 
+![Demo de Hollow](https://raw.githubusercontent.com/r4yb3l/hollow/main/assets/hollow.gif)
+
+## Features
+
+- Pixel-perfect skeletons from your real `RenderObject` tree — no manual measurement
+- Globally synchronized shimmer animation
+- One-command CLI: `dart run hollow:build`
+- Dark mode support out of the box
+- Adaptive bone widths (percentage-based) for different screen sizes
+
 ```dart
 Skeleton(
   name: 'blog-card',
