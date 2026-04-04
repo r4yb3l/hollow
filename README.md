@@ -2,7 +2,9 @@
 
 Pixel-perfect skeleton loading screens for Flutter — extracted from your real widget tree, no manual measurement required.
 
-![Demo de Hollow](https://raw.githubusercontent.com/r4yb3l/hollow/main/assets/hollow.gif)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/r4yb3l/hollow/main/assets/hollow.gif" alt="Demo de Hollow">
+</p>
 
 ## Features
 
