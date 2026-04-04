@@ -30,7 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  hollow: ^0.1.0
+  hollow:
+    path: ..
 
 dev_dependencies:
   flutter_test:

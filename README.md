@@ -15,16 +15,20 @@ Pixel-perfect skeleton loading screens for Flutter — extracted from your real 
 - Adaptive bone widths (percentage-based) for different screen sizes
 
 ```dart
-Skeleton(
-  name: 'blog-card',
-  loading: isLoading,
-  fixture: BlogCard(data: mockData),
-  child: BlogCard(data: realData),
-)
+// main.dart
+void main() {
+  HollowRunner.run(
+    app: MyApp(),
+    setup: registerAllBones,
+    fixtures: () => [
+      Skeleton(name: 'blog-card', fixture: BlogCard(data: mockData), loading: false, child: SizedBox.shrink()),
+    ],
+  );
+}
 ```
 
 ```bash
-dart run hollow:build
+dart run hollow:build -d iPhone
 ```
 
 Done. Every `Skeleton` shows a shimmer placeholder that matches your real layout exactly.
@@ -56,31 +60,57 @@ flutter pub add hollow
 
 ## Setup
 
-### 1. Wrap your widgets
+### 1. Replace `runApp` with `HollowRunner.run`
+
+`HollowRunner.run` is the single entry point for hollow. It runs your real app normally, and switches to a capture screen only when `dart run hollow:build` is active.
+
+The `fixtures` list is where you declare every skeleton you want to capture — all screens, all widgets, in one place. hollow mounts them all simultaneously so the CLI captures everything in a single pass with no navigation required.
 
 ```dart
 import 'package:hollow/hollow.dart';
+// add this import after the first build:
+import 'bones/bones_registry.dart';
 
-class BlogPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Skeleton(
-      name: 'blog-card',
-      loading: isLoading,
-      fixture: BlogCard(data: BlogPost.mock()),  // shown during CLI capture
-      child: BlogCard(data: post),
-    );
-  }
+void main() {
+  HollowRunner.run(
+    app: MyApp(),
+    setup: registerAllBones,   // optional until bones_registry.dart exists
+    fixtures: () => [
+      Skeleton(
+        name: 'blog-card',
+        fixture: BlogCard(data: BlogPost.mock()),
+        loading: false,
+        child: SizedBox.shrink(),
+      ),
+      Skeleton(
+        name: 'user-profile',
+        fixture: ProfileCard(data: User.mock()),
+        loading: false,
+        child: SizedBox.shrink(),
+      ),
+    ],
+  );
 }
+```
+
+Then wrap each widget where you want the skeleton shown at runtime:
+
+```dart
+Skeleton(
+  name: 'blog-card',
+  loading: isLoading,
+  child: BlogCard(data: post),
+)
 ```
 
 ### 2. Run the CLI
 
 ```bash
-dart run hollow:build
+flutter devices                       # find your device id
+dart run hollow:build -d iPhone       # capture all fixtures
 ```
 
-hollow detects your connected simulator or device, launches your app in capture mode, and writes bone files to `lib/bones/`.
+hollow launches your app in capture mode, mounts all fixtures at once, and writes bone files to `lib/bones/`.
 
 ```
   💀 hollow build
@@ -100,17 +130,6 @@ hollow detects your connected simulator or device, launches your app in capture 
   → bones_registry.dart  (3 skeletons)
 
   💀 3 skeletons captured.
-```
-
-### 3. Register once in `main()`
-
-```dart
-import 'bones/bones_registry.dart';
-
-void main() {
-  registerAllBones();
-  runApp(MyApp());
-}
 ```
 
 That's it. Every `Skeleton(name: '...')` automatically resolves its bones from the registry.
@@ -136,10 +155,10 @@ That's it. Every `Skeleton(name: '...')` automatically resolves its bones from t
 ## CLI
 
 ```bash
-dart run hollow:build                          # auto-detects simulator/device
-dart run hollow:build --device emulator-5554  # explicit device ID
-dart run hollow:build --out lib/bones         # custom output directory
-dart run hollow:build --timeout 8000          # wait longer after last capture
+flutter devices                                # list available devices
+dart run hollow:build -d <device-id>           # capture (device required)
+dart run hollow:build -d iPhone --out lib/bones        # custom output dir
+dart run hollow:build -d emulator-5554 --timeout 8000  # longer idle wait
 ```
 
 ---

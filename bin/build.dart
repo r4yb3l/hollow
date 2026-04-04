@@ -11,23 +11,19 @@ void main(List<String> args) async {
     exit(0);
   }
 
-  String? deviceId = _argValue(args, '--device');
+  final deviceId = _argValue(args, '-d');
   String outDir = _argValue(args, '--out') ?? 'lib/bones';
   final timeoutMs = int.tryParse(_argValue(args, '--timeout') ?? '') ?? 5000;
 
   if (deviceId == null) {
-    stdout.write('\n  hollow: detecting device...');
-    deviceId = await _detectDevice();
-    if (deviceId == null) {
-      stdout.write(' none found.\n\n');
-      stderr.writeln(
-        '  hollow: no connected device found.\n\n'
-        '  Start a simulator or connect a device, then run:\n'
-        '    dart run hollow:build\n',
-      );
-      exit(1);
-    }
-    stdout.writeln(' $deviceId');
+    stderr.writeln(
+      '\n  hollow: no device specified.\n\n'
+      '  Pass a device id with -d:\n'
+      '    dart run hollow:build -d <device-id>\n\n'
+      '  List available devices with:\n'
+      '    flutter devices\n',
+    );
+    exit(1);
   }
 
   _printHeader(outDir);
@@ -161,28 +157,6 @@ Future<void> _writeOutput(
   );
 }
 
-Future<String?> _detectDevice() async {
-  try {
-    final result = await Process.run('flutter', ['devices', '--machine']);
-    final devices = jsonDecode(result.stdout as String) as List<dynamic>;
-
-    final supported = devices
-        .cast<Map<String, dynamic>>()
-        .where((d) => d['isSupported'] == true)
-        .toList();
-
-    for (final priority in ['ios-simulator', 'ios', 'android']) {
-      final match = supported.firstWhere(
-        (d) => ((d['targetPlatform'] as String?) ?? '').contains(priority),
-        orElse: () => {},
-      );
-      if (match.isNotEmpty) return match['id'] as String?;
-    }
-    return null;
-  } catch (_) {
-    return null;
-  }
-}
 
 void _printHeader(String outDir) {
   stdout.writeln('\n  \x1b[1m💀 hollow build\x1b[0m');
@@ -198,18 +172,25 @@ void _printHelp() {
   widgets at their rendered positions, and writes bone data to disk.
 
   Options:
-    --device <id>    Flutter device ID      (default: auto-detected)
+    -d <id>          Flutter device ID      (required, see: flutter devices)
     --out <dir>      Output directory       (default: lib/bones)
     --timeout <ms>   Idle timeout after last capture (default: 5000)
 
   Setup:
-    1. Wrap your widget:
-       Skeleton(
-         name: 'blog-card',
-         loading: isLoading,
-         fixture: BlogCard(data: mockData),
-         child: BlogCard(data: realData),
-       )
+    1. Replace runApp() in main.dart:
+       void main() {
+         HollowRunner.run(
+           app: MyApp(),
+           fixtures: () => [
+             Skeleton(
+               name: 'blog-card',
+               fixture: BlogCard(data: mockData),
+               loading: false,
+               child: SizedBox.shrink(),
+             ),
+           ],
+         );
+       }
 
     2. Run: dart run hollow:build
 
@@ -217,7 +198,7 @@ void _printHelp() {
        import 'bones/bones_registry.dart';
        void main() {
          registerAllBones();
-         runApp(MyApp());
+         // ... HollowRunner.run(...)
        }
 ''');
 }
@@ -228,5 +209,8 @@ String? _argValue(List<String> args, String flag) {
   return args[i + 1];
 }
 
-String _toIdentifier(String name) =>
-    name.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_');
+String _toIdentifier(String name) {
+  final parts = name.split(RegExp(r'[^a-zA-Z0-9]+'));
+  return parts.first.toLowerCase() +
+      parts.skip(1).map((p) => p.isEmpty ? '' : p[0].toUpperCase() + p.substring(1)).join();
+}

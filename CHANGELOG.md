@@ -1,3 +1,11 @@
+## 0.2.0
+
+- Add `HollowRunner.run()` — replaces the `registerAllBones()` + `runApp()` pattern with a single entry point
+- Add `fixtures` parameter to `HollowRunner.run()`: declare all skeletons in one place and capture every screen in a single build pass, with no navigation required
+- Add optional `setup` callback to `HollowRunner.run()` for registering pre-generated bones; skipped in build mode so `bones_registry.dart` does not need to exist on first run
+- Remove auto device detection from CLI — `dart run hollow:build` now requires `-d <device-id>` (use `flutter devices` to list options)
+- Fix CLI to generate camelCase variable names in `bones_registry.dart`
+
 ## 0.1.4
 
 - Add `topics` to pubspec for pub.dev discoverability (skeleton, shimmer, loading, placeholder, ui)
