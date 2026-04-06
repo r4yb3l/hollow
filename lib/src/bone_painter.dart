@@ -48,14 +48,18 @@ class BonePainter extends CustomPainter {
       );
 
     for (final bone in bones) {
-      final rect = RRect.fromRectAndRadius(
+      final br = bone.borderRadius ?? const BorderRadiusData();
+      final rect = RRect.fromRectAndCorners(
         Rect.fromLTWH(
           bone.x / 100 * size.width,
           bone.y,
           bone.w / 100 * size.width,
           bone.h,
         ),
-        Radius.circular(bone.r),
+        topLeft: Radius.circular(br.tl),
+        topRight: Radius.circular(br.tr),
+        bottomLeft: Radius.circular(br.bl),
+        bottomRight: Radius.circular(br.br),
       );
       canvas.drawRRect(rect, bone.isContainer ? containerPaint : shimmerPaint);
     }

@@ -1,3 +1,44 @@
+/// Represents border radius for a single corner or uniform across all corners.
+class BorderRadiusData {
+  const BorderRadiusData({
+    this.tl = 8.0,
+    this.tr = 8.0,
+    this.bl = 8.0,
+    this.br = 8.0,
+  });
+
+  const BorderRadiusData.uniform(double radius)
+      : tl = radius,
+        tr = radius,
+        bl = radius,
+        br = radius;
+
+  final double tl;
+  final double tr;
+  final double bl;
+  final double br;
+
+  factory BorderRadiusData.fromJson(Map<String, dynamic> json) {
+    if (json.containsKey('r')) {
+      final r = (json['r'] as num).toDouble();
+      return BorderRadiusData.uniform(r);
+    }
+    return BorderRadiusData(
+      tl: (json['tl'] as num?)?.toDouble() ?? 8.0,
+      tr: (json['tr'] as num?)?.toDouble() ?? 8.0,
+      bl: (json['bl'] as num?)?.toDouble() ?? 8.0,
+      br: (json['br'] as num?)?.toDouble() ?? 8.0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'tl': tl,
+        'tr': tr,
+        'bl': bl,
+        'br': br,
+      };
+}
+
 /// A single skeleton bone — a rounded rect placeholder.
 ///
 /// [x] and [w] are percentages of the container width (0–100),
@@ -9,7 +50,7 @@ class Bone {
     required this.y,
     required this.w,
     required this.h,
-    this.r = 8.0,
+    this.borderRadius,
     this.isContainer = false,
   });
 
@@ -25,8 +66,8 @@ class Bone {
   /// Height in logical pixels.
   final double h;
 
-  /// Border radius in logical pixels.
-  final double r;
+  /// Border radius data. Defaults to uniform 8px if null.
+  final BorderRadiusData? borderRadius;
 
   /// True if this is a background container bone — rendered lighter so
   /// child bones stand out against it.
@@ -37,7 +78,11 @@ class Bone {
         y: (json['y'] as num).toDouble(),
         w: (json['w'] as num).toDouble(),
         h: (json['h'] as num).toDouble(),
-        r: (json['r'] as num?)?.toDouble() ?? 8.0,
+        borderRadius: json.containsKey('br')
+            ? BorderRadiusData.fromJson(json['br'] as Map<String, dynamic>)
+            : json.containsKey('r')
+                ? BorderRadiusData.uniform((json['r'] as num).toDouble())
+                : null,
         isContainer: json['c'] as bool? ?? false,
       );
 
@@ -46,7 +91,8 @@ class Bone {
         'y': y,
         'w': w,
         'h': h,
-        'r': r,
+        if (borderRadius != null)
+          'br': borderRadius!.toJson(),
         if (isContainer) 'c': true,
       };
 }

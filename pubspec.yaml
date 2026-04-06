@@ -1,6 +1,6 @@
 name: hollow
 description: Skeleton loading screens for Flutter. Generates pixel-perfect shimmer placeholders from your real RenderObject tree.
-version: 0.2.1
+version: 1.0.0
 homepage: https://github.com/r4yb3l/hollow
 repository: https://github.com/r4yb3l/hollow
 issue_tracker: https://github.com/r4yb3l/hollow/issues
@@ -24,6 +24,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  analyzer: ^6.0.0
 
 flutter:
 

@@ -7,14 +7,6 @@ void main() {
   HollowRunner.run(
     app: const App(),
     setup: registerAllBones,
-    fixtures: () => [
-      Skeleton(
-        name: 'article-card',
-        loading: false,
-        fixture: ArticleCard(data: ArticleCard.mock),
-        child: const SizedBox.shrink(),
-      ),
-    ],
   );
 }
 
@@ -53,21 +45,84 @@ class _FeedScreenState extends State<FeedScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('hollow')),
-      body: ListView.separated(
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        itemCount: ArticleCard.feed.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 12),
-        itemBuilder: (context, index) => Skeleton(
-          name: 'article-card',
-          loading: _loading,
-          child: ArticleCard(data: ArticleCard.feed[index]),
-        ),
+        children: [
+          Skeleton(
+            name: 'person-row',
+            loading: _loading,
+            child: PersonRow(name: 'Raybel Hernandez', role: 'Flutter Developer'),
+          ),
+          const SizedBox(height: 16),
+          for (final article in ArticleCard.feed) ...[
+            Skeleton(
+              name: 'article-card',
+              loading: _loading,
+              child: ArticleCard(data: article),
+            ),
+            const SizedBox(height: 12),
+          ],
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Skeleton(
+                name: 'profile-avatar',
+                loading: _loading,
+                child: Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 100,
+                      backgroundImage: const NetworkImage(
+                        'https://images.unsplash.com/photo-1628519592419-bf288f08cef5?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8c3BvcnRzJTIwY2FyfGVufDB8fDB8fHww',
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: CircleAvatar(
+                        backgroundColor: Colors.black26,
+                        child: const Icon(Icons.edit),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
 typedef Article = ({String title, String author, String readTime, int likes});
+
+class PersonRow extends StatelessWidget {
+  const PersonRow({super.key, required this.name, required this.role});
+
+  final String name;
+  final String role;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const CircleAvatar(radius: 20, child: Icon(Icons.person)),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(name, style: Theme.of(context).textTheme.titleSmall),
+            Text(role, style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ),
+        const Spacer(),
+        const Icon(Icons.person_search),
+      ],
+    );
+  }
+}
 
 class ArticleCard extends StatelessWidget {
   const ArticleCard({super.key, required this.data});

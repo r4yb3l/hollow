@@ -5,26 +5,65 @@ import 'package:hollow/hollow.dart';
 void main() {
   group('Bone serialization', () {
     test('toJson / fromJson roundtrip', () {
-      const bone = Bone(x: 10, y: 20, w: 80, h: 40, r: 8);
+      const bone = Bone(x: 10, y: 20, w: 80, h: 40);
       final json = bone.toJson();
       final restored = Bone.fromJson(json);
       expect(restored.x, bone.x);
       expect(restored.y, bone.y);
       expect(restored.w, bone.w);
       expect(restored.h, bone.h);
-      expect(restored.r, bone.r);
       expect(restored.isContainer, false);
     });
 
     test('container bone roundtrip', () {
-      const bone = Bone(x: 0, y: 0, w: 100, h: 200, r: 12, isContainer: true);
+      const bone = Bone(x: 0, y: 0, w: 100, h: 200, isContainer: true);
       final restored = Bone.fromJson(bone.toJson());
       expect(restored.isContainer, true);
     });
 
     test('isContainer defaults to false when key absent', () {
-      final bone = Bone.fromJson({'x': 0, 'y': 0, 'w': 100, 'h': 50, 'r': 8});
+      final bone = Bone.fromJson({'x': 0, 'y': 0, 'w': 100, 'h': 50});
       expect(bone.isContainer, false);
+    });
+
+    test('backward compat: r field creates uniform BorderRadiusData', () {
+      final bone = Bone.fromJson({'x': 0, 'y': 0, 'w': 100, 'h': 50, 'r': 12});
+      expect(bone.borderRadius?.tl, 12);
+      expect(bone.borderRadius?.tr, 12);
+      expect(bone.borderRadius?.bl, 12);
+      expect(bone.borderRadius?.br, 12);
+    });
+
+    test('new format: br with individual corners', () {
+      final bone = Bone.fromJson({
+        'x': 0,
+        'y': 0,
+        'w': 100,
+        'h': 50,
+        'br': {'tl': 4, 'tr': 8, 'bl': 12, 'br': 16}
+      });
+      expect(bone.borderRadius?.tl, 4);
+      expect(bone.borderRadius?.tr, 8);
+      expect(bone.borderRadius?.bl, 12);
+      expect(bone.borderRadius?.br, 16);
+    });
+
+    test('BorderRadiusData serialization', () {
+      const br = BorderRadiusData(tl: 4, tr: 8, bl: 12, br: 16);
+      final json = br.toJson();
+      final restored = BorderRadiusData.fromJson(json);
+      expect(restored.tl, 4);
+      expect(restored.tr, 8);
+      expect(restored.bl, 12);
+      expect(restored.br, 16);
+    });
+
+    test('BorderRadiusData uniform constructor', () {
+      const br = BorderRadiusData.uniform(8);
+      expect(br.tl, 8);
+      expect(br.tr, 8);
+      expect(br.bl, 8);
+      expect(br.br, 8);
     });
   });
 
@@ -35,8 +74,8 @@ void main() {
         width: 375,
         height: 200,
         bones: [
-          Bone(x: 0, y: 0, w: 100, h: 200, r: 12, isContainer: true),
-          Bone(x: 5, y: 16, w: 90, h: 14, r: 4),
+          Bone(x: 0, y: 0, w: 100, h: 200, isContainer: true),
+          Bone(x: 5, y: 16, w: 90, h: 14),
         ],
       );
       final restored = SkeletonResult.fromJson(result.toJson());
@@ -45,7 +84,6 @@ void main() {
       expect(restored.height, 200);
       expect(restored.bones.length, 2);
       expect(restored.bones[0].isContainer, true);
-      expect(restored.bones[1].r, 4);
     });
   });
 
@@ -99,7 +137,7 @@ void main() {
           name: 'my-card',
           width: 375,
           height: 150,
-          bones: [Bone(x: 0, y: 0, w: 100, h: 150, r: 8)],
+          bones: [Bone(x: 0, y: 0, w: 100, h: 150)],
         ),
       });
 

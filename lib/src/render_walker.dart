@@ -56,7 +56,7 @@ void _walk(
       y: relTop,
       w: wPct,
       h: h,
-      r: _extractBorderRadius(node),
+      borderRadius: _extractBorderRadius(node),
     ));
     return;
   }
@@ -67,7 +67,7 @@ void _walk(
       y: relTop,
       w: wPct,
       h: h,
-      r: _extractBorderRadius(node),
+      borderRadius: _extractBorderRadius(node),
       isContainer: true,
     ));
   }
@@ -105,19 +105,39 @@ bool _hasVisibleBackground(RenderObject node) {
   return false;
 }
 
-double _extractBorderRadius(RenderObject node) {
+BorderRadiusData _extractBorderRadius(RenderObject node) {
   if (node is RenderClipRRect) {
-    return node.borderRadius.resolve(TextDirection.ltr).topLeft.x;
+    final br = node.borderRadius.resolve(TextDirection.ltr);
+    return BorderRadiusData(
+      tl: br.topLeft.x,
+      tr: br.topRight.x,
+      bl: br.bottomLeft.x,
+      br: br.bottomRight.x,
+    );
   }
   if (node is RenderDecoratedBox) {
     final decoration = node.decoration;
     if (decoration is BoxDecoration) {
       final br = decoration.borderRadius;
-      if (br != null) return br.resolve(TextDirection.ltr).topLeft.x;
+      if (br != null) {
+        final resolved = br.resolve(TextDirection.ltr);
+        return BorderRadiusData(
+          tl: resolved.topLeft.x,
+          tr: resolved.topRight.x,
+          bl: resolved.bottomLeft.x,
+          br: resolved.bottomRight.x,
+        );
+      }
     }
   }
-  if (node is RenderPhysicalModel) {
-    return node.borderRadius?.topLeft.x ?? 8.0;
+  if (node is RenderPhysicalModel && node.borderRadius != null) {
+    final br = node.borderRadius!;
+    return BorderRadiusData(
+      tl: br.topLeft.x,
+      tr: br.topRight.x,
+      bl: br.bottomLeft.x,
+      br: br.bottomRight.x,
+    );
   }
-  return 8.0;
+  return const BorderRadiusData();
 }

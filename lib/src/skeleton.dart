@@ -16,14 +16,14 @@ const bool _kBuildMode = bool.fromEnvironment('HOLLOW_BUILD');
 /// Skeleton(
 ///   name: 'blog-card',
 ///   loading: isLoading,
-///   fixture: BlogCard(data: mockData),
-///   child: BlogCard(data: realData),
+///   child: BlogCard(data: post.data),
 /// )
 /// ```
 ///
 /// ## Build mode
-/// Run `dart run hollow:build` to snapshot bone positions from your running
-/// app and generate `lib/bones/bones_registry.dart`. Import it once in `main`:
+/// Run `dart run hollow:build -d <device>` to snapshot bone positions from your
+/// running app and generate `lib/bones/bones_registry.dart`. Import it once in
+/// `main`:
 /// ```dart
 /// import 'bones/bones_registry.dart';
 /// void main() {
@@ -37,7 +37,6 @@ class Skeleton extends StatefulWidget {
     required this.loading,
     required this.child,
     this.name,
-    this.fixture,
     this.color,
     this.highlightColor,
     this.animate = true,
@@ -55,11 +54,6 @@ class Skeleton extends StatefulWidget {
   /// and to identify this skeleton during `dart run hollow:build`.
   final String? name;
 
-  /// Mock content shown during `dart run hollow:build` so the CLI can
-  /// capture bone positions without real data being available.
-  /// Falls back to [child] if not provided.
-  final Widget? fixture;
-
   /// Base bone color. Defaults to a light gray appropriate for light mode.
   final Color? color;
 
@@ -72,7 +66,7 @@ class Skeleton extends StatefulWidget {
   /// Shown when [loading] is true but no bones are available yet.
   final Widget? fallback;
 
-  /// Controls how the CLI extracts bones from [fixture] during build mode.
+  /// Controls how the CLI extracts bones from [child] during build mode.
   final SnapshotConfig? snapshotConfig;
 
   @override
@@ -124,7 +118,7 @@ class _SkeletonState extends State<Skeleton>
   @override
   Widget build(BuildContext context) {
     if (_kBuildMode) {
-      return widget.fixture ?? widget.child;
+      return widget.child;
     }
 
     final activeBones = _capturedBones ??
