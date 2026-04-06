@@ -1,9 +1,12 @@
 # hollow
 
-Pixel-perfect skeleton loading screens for Flutter — extracted from your real widget tree, no manual measurement required.
+[![pub version](https://img.shields.io/pub/v/hollow.svg)](https://pub.dev/packages/hollow)
+[![license](https://img.shields.io/github/license/r4yb3l/hollow.svg)](https://github.com/r4yb3l/hollow/blob/main/LICENSE)
+
+Pixel-perfect skeleton loading screens for Flutter — extracted from your real `RenderObject` tree, no manual measurement required.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/r4yb3l/hollow/main/assets/hollow.gif" alt="Demo de Hollow">
+  <img src="https://raw.githubusercontent.com/r4yb3l/hollow/main/assets/hollow.gif" alt="Demo of Hollow">
 </p>
 
 ## Features
@@ -11,37 +14,15 @@ Pixel-perfect skeleton loading screens for Flutter — extracted from your real 
 - Pixel-perfect skeletons from your real `RenderObject` tree — no manual measurement
 - Globally synchronized shimmer animation
 - One-command CLI: `dart run hollow:build`
+- Independent border radius per corner
 - Dark mode support out of the box
 - Adaptive bone widths (percentage-based) for different screen sizes
 
-```dart
-// main.dart
-void main() {
-  HollowRunner.run(
-    app: MyApp(),
-    setup: registerAllBones,
-    fixtures: () => [
-      Skeleton(name: 'blog-card', fixture: BlogCard(data: mockData), loading: false, child: SizedBox.shrink()),
-    ],
-  );
-}
-```
-
-```bash
-dart run hollow:build -d iPhone
-```
-
-Done. Every `Skeleton` shows a shimmer placeholder that matches your real layout exactly.
-
 ---
 
-## How it works
+## Concept
 
-1. Wrap your widget with `Skeleton` and give it a `name`
-2. Run `dart run hollow:build` — hollow launches your app in capture mode, walks the `RenderObject` tree of each `Skeleton`, and snapshots every visible element's exact position and size
-3. Import the generated registry once in `main()` — every `Skeleton` auto-resolves its bones
-
-hollow reads `getBoundingRect()` equivalents directly from Flutter's render tree — no layout simulation, no heuristics, just what the framework already computed.
+hollow bridges the gap between loading states and real UI by capturing the actual layout of your widgets. Instead of hand-crafting skeleton placeholders that drift from reality, wrap any widget in `Skeleton(...)`, run the CLI, and get pixel-perfect shimmer placeholders that match your real layout — automatically.
 
 ---
 
@@ -49,7 +30,7 @@ hollow reads `getBoundingRect()` equivalents directly from Flutter's render tree
 
 ```yaml
 dependencies:
-  hollow: ^0.1.0
+  hollow: ^1.0.0
 ```
 
 ```bash
@@ -58,44 +39,13 @@ flutter pub add hollow
 
 ---
 
-## Setup
+## Usage
 
-### 1. Replace `runApp` with `HollowRunner.run`
-
-`HollowRunner.run` is the single entry point for hollow. It runs your real app normally, and switches to a capture screen only when `dart run hollow:build` is active.
-
-The `fixtures` list is where you declare every skeleton you want to capture — all screens, all widgets, in one place. hollow mounts them all simultaneously so the CLI captures everything in a single pass with no navigation required.
+### 1. Wrap widgets with `Skeleton`
 
 ```dart
 import 'package:hollow/hollow.dart';
-// add this import after the first build:
-import 'bones/bones_registry.dart';
 
-void main() {
-  HollowRunner.run(
-    app: MyApp(),
-    setup: registerAllBones,   // optional until bones_registry.dart exists
-    fixtures: () => [
-      Skeleton(
-        name: 'blog-card',
-        fixture: BlogCard(data: BlogPost.mock()),
-        loading: false,
-        child: SizedBox.shrink(),
-      ),
-      Skeleton(
-        name: 'user-profile',
-        fixture: ProfileCard(data: User.mock()),
-        loading: false,
-        child: SizedBox.shrink(),
-      ),
-    ],
-  );
-}
-```
-
-Then wrap each widget where you want the skeleton shown at runtime:
-
-```dart
 Skeleton(
   name: 'blog-card',
   loading: isLoading,
@@ -103,14 +53,14 @@ Skeleton(
 )
 ```
 
-### 2. Run the CLI
+### 2. Run the CLI to capture
 
 ```bash
-flutter devices                       # find your device id
-dart run hollow:build -d iPhone       # capture all fixtures
+flutter devices                        # find your device id
+dart run hollow:build -d iPhone        # scan, capture, generate
 ```
 
-hollow launches your app in capture mode, mounts all fixtures at once, and writes bone files to `lib/bones/`.
+The CLI scans your source files via Dart AST analysis, launches your app in capture mode, walks the `RenderObject` tree for each `Skeleton`, and writes bone data to `lib/bones/`.
 
 ```
   💀 hollow build
@@ -118,21 +68,90 @@ hollow launches your app in capture mode, mounts all fixtures at once, and write
   output  lib/bones
 
   ✓  blog-card               18 bones
-  ✓  user-profile            11 bones
-  ✓  product-card            9 bones
+  ✓  user-profile           11 bones
 
   ──────────────────────────────────────────────────
   Writing files
 
   → blog-card.bones.json
   → user-profile.bones.json
-  → product-card.bones.json
-  → bones_registry.dart  (3 skeletons)
+  → bones_registry.dart  (2 skeletons)
 
-  💀 3 skeletons captured.
+  💀 2 skeletons captured.
 ```
 
-That's it. Every `Skeleton(name: '...')` automatically resolves its bones from the registry.
+### 3. Register bones in `main.dart`
+
+```dart
+import 'package:hollow/hollow.dart';
+import 'bones/bones_registry.dart';
+
+void main() {
+  registerAllBones();
+  runApp(MyApp());
+}
+```
+
+Every `Skeleton(name: 'blog-card')` automatically resolves its bones from the registry and displays the shimmer — no extra configuration needed.
+
+---
+
+## How it works
+
+The CLI runs your app with `HOLLOW_BUILD=true`, which makes every `Skeleton` render its `child` directly (bypassing the loading state). After the first frame, hollow walks the `RenderObject` tree and prints structured JSON to stdout. The CLI parses this output, writes `*.bones.json` files, and generates `lib/bones/bones_registry.dart`.
+
+Bone positions use percentage widths (`x`, `w` as 0–100% of container) and absolute logical pixel heights (`y`, `h`) — so skeletons adapt to different screen widths without re-capturing.
+
+### Shimmer
+
+All bones share the same `AnimationController` via `BonePainter`, producing a globally synchronized shimmer gradient. Dark mode adapts automatically via `Theme.of(context).brightness`.
+
+---
+
+## Migration Guide (v0.x → v1.0.0)
+
+### 1. Rename `HollowSkeleton` → `Skeleton`
+
+```dart
+// Before
+HollowSkeleton(
+  fixture: MyWidget(),    // <-- separate fixture widget
+  loading: isLoading,
+  child: MyWidget(),
+)
+
+// After
+Skeleton(
+  loading: isLoading,
+  child: MyWidget(),      // <-- child used directly
+)
+```
+
+### 2. Remove `fixture`
+
+The `fixture` parameter is gone. The `child` widget is now captured directly during the build phase. If you had a separate mock/fixture widget, simply pass your real widget as `child` — hollow will capture it during `dart run hollow:build`.
+
+### 3. Update `HollowRunner.run` fixtures (if using)
+
+```dart
+// Before
+HollowRunner.run(
+  fixtures: () => [
+    Skeleton(name: 'card', fixture: CardWidget(), loading: false, child: SizedBox.shrink()),
+  ],
+)
+
+// After — fixtures now declare child widgets directly
+HollowRunner.run(
+  fixtures: () => [
+    Skeleton(name: 'card', loading: false, child: CardWidget()),
+  ],
+)
+```
+
+### 4. Update `bones_registry.dart` import
+
+The generated registry path remains `lib/bones/bones_registry.dart`. Just re-run `dart run hollow:build` to regenerate it.
 
 ---
 
@@ -140,58 +159,40 @@ That's it. Every `Skeleton(name: '...')` automatically resolves its bones from t
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `loading` | `bool` | required | Show skeleton or real content |
-| `child` | `Widget` | required | Your real widget |
-| `name` | `String?` | — | Name for registry lookup and CLI capture |
-| `fixture` | `Widget?` | — | Mock content shown during CLI capture |
+| `loading` | `bool` | required | Show skeleton shimmer or real `child` |
+| `child` | `Widget` | required | Your real widget — also captured for bone generation |
+| `name` | `String?` | — | Registry lookup key and CLI capture identifier |
 | `color` | `Color?` | theme-aware | Base bone color |
 | `highlightColor` | `Color?` | theme-aware | Shimmer highlight color |
 | `animate` | `bool` | `true` | Enable shimmer animation |
-| `fallback` | `Widget?` | — | Shown when loading but no bones available |
-| `snapshotConfig` | `SnapshotConfig?` | — | Control which render objects are captured |
+| `fallback` | `Widget?` | — | Shown when loading but no bones are registered |
+| `snapshotConfig` | `SnapshotConfig?` | — | Control which render objects to exclude |
 
 ---
 
 ## CLI
 
 ```bash
-flutter devices                                # list available devices
-dart run hollow:build -d <device-id>           # capture (device required)
+flutter devices                              # list available devices
+dart run hollow:build -d <device-id>         # capture all skeletons
 dart run hollow:build -d iPhone --out lib/bones        # custom output dir
 dart run hollow:build -d emulator-5554 --timeout 8000  # longer idle wait
 ```
 
----
-
-## How bones are captured
-
-hollow walks Flutter's `RenderObject` tree starting from the root of each `Skeleton`:
-
-- **`RenderParagraph`** → text leaf → captured as a single bone
-- **`RenderImage`** → image leaf → captured as a single bone
-- **`RenderDecoratedBox`** with a non-transparent background → container bone (rendered lighter so child bones stand out)
-- **`RenderClipRRect`**, **`RenderPhysicalModel`** → border radius extracted and applied to the bone
-
-Bone positions use percentage widths (`x`, `w` as % of container) and absolute logical pixel heights (`y`, `h`), so skeletons adapt gracefully to different screen widths.
-
-### Shimmer
-
-The shimmer gradient runs across all bones simultaneously in perfect sync — the same effect used by LinkedIn, Facebook, and most modern apps.
-
-Dark mode is handled automatically via the active `ThemeData.brightness`.
+The CLI uses `package:analyzer` (Dart AST) to find all `Skeleton` usages in your source code before launching the app — making it robust across different code patterns and Flutter versions.
 
 ---
 
 ## Advanced
 
-### `SnapshotConfig`
+### Exclude render object types
 
 ```dart
 Skeleton(
   name: 'nav-bar',
   loading: isLoading,
   snapshotConfig: SnapshotConfig(
-    excludeTypes: [MyIconWidget],
+    excludeTypes: [MyIconWidget, CustomPaint],
   ),
   child: NavBar(),
 )
@@ -199,7 +200,7 @@ Skeleton(
 
 ### Manual registration
 
-You can register bones programmatically without the CLI — useful for testing or custom build pipelines:
+You can register bones programmatically without the CLI:
 
 ```dart
 HollowRegistry.register({
@@ -208,9 +209,9 @@ HollowRegistry.register({
     width: 375,
     height: 200,
     bones: [
-      Bone(x: 0, y: 0, w: 100, h: 200, r: 12, isContainer: true),
-      Bone(x: 4, y: 16, w: 92, h: 14, r: 4),
-      Bone(x: 4, y: 38, w: 60, h: 12, r: 4),
+      Bone(x: 0, y: 0, w: 100, h: 200, borderRadius: BorderRadiusData(tl: 12, tr: 12, bl: 0, br: 0)),
+      Bone(x: 4, y: 16, w: 92, h: 14, borderRadius: BorderRadiusData.uniform(4)),
+      Bone(x: 4, y: 38, w: 60, h: 12, borderRadius: BorderRadiusData.uniform(4)),
     ],
   ),
 });
@@ -220,9 +221,9 @@ HollowRegistry.register({
 
 ## Limitations
 
-- Widgets painted via `CustomPaint` / raw `Canvas` calls are captured as their bounding box only — internal draw calls can't be introspected
+- Widgets painted via `CustomPaint` / raw `Canvas` are captured as their bounding box only
 - Platform views are not supported
-- One breakpoint captured per build run (responsive support planned)
+- One breakpoint captured per build run
 
 ---
 
